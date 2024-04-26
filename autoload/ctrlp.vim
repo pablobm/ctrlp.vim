@@ -801,9 +801,14 @@ fu! s:Update(str)
 	let pat = s:matcher == {} ? s:SplitPattern(str) : str
 	let lines = s:nolim == 1 && empty(str) ? copy(g:ctrlp_lines)
 		\ : s:MatchedItems(g:ctrlp_lines, pat, str, s:mw_res)
+	cal sort(lines, function('s:exactfirstsort', [str]))
 	if empty(str) | cal clearmatches() | en
 	cal s:Render(lines, pat)
 	retu lines
+endf
+
+fu! s:exactfirstsort(str, ...)
+	retu call stridx(a:1, a:str) - stridx(a:2, a:str)
 endf
 
 fu! s:ForceUpdate()
