@@ -651,11 +651,20 @@ fu! ctrlp#buffers(...)
 	en
 endf
 " * MatchedItems() {{{1
-fu! s:MatchIt(items, pat, limit, exc)
+fu! s:MatchIt(items, pat, userinput, limit, exc)
 	let [lines, id] = [[], 0]
 	let pat =
 		\ s:byfname() ? map(split(a:pat, '^[^;]\+\\\@<!\zs;', 1), 's:martcs.v:val')
 		\ : s:martcs.a:pat
+	for item in a:items
+		let id += 1
+		try
+			if stridx(item, a:userinput) != -1
+				let lines += [item]
+			en
+		cat | brea | endt
+		if a:limit > 0 && len(lines) >= a:limit | brea | en
+	endfo
 	for item in a:items
 		let id += 1
 		try
@@ -670,7 +679,7 @@ fu! s:MatchIt(items, pat, limit, exc)
 	retu lines
 endf
 
-fu! s:MatchedItems(items, pat, limit)
+fu! s:MatchedItems(items, pat, userinput, limit)
 	let exc = exists('s:crfilerel') ? s:crfilerel : ''
 	let items = s:narrowable() ? s:matched + s:mdata[3] : a:items
 	let matcher = s:getextvar('matcher')
@@ -691,7 +700,7 @@ fu! s:MatchedItems(items, pat, limit)
 			\ }] : [items, a:pat, a:limit, s:mmode(), s:ispath, exc, s:regexp]
 		let lines = call(matcher['match'], argms, matcher)
 	el
-		let lines = s:MatchIt(items, a:pat, a:limit, exc)
+		let lines = s:MatchIt(items, a:pat, a:userinput, a:limit, exc)
 	en
 	let s:matches = len(lines)
 	unl! s:did_exp
@@ -791,7 +800,7 @@ fu! s:Update(str)
 	let s:martcs = &scs && str =~ '\u' ? '\C' : ''
 	let pat = s:matcher == {} ? s:SplitPattern(str) : str
 	let lines = s:nolim == 1 && empty(str) ? copy(g:ctrlp_lines)
-		\ : s:MatchedItems(g:ctrlp_lines, pat, s:mw_res)
+		\ : s:MatchedItems(g:ctrlp_lines, pat, str, s:mw_res)
 	if empty(str) | cal clearmatches() | en
 	cal s:Render(lines, pat)
 	retu lines
